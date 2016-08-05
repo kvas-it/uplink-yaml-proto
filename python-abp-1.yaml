@@ -1,0 +1,50 @@
+# Basic python library.
+boxes:
+  # Box for testing.
+  tester:
+    # The base image that will be provided by the CI somehow.
+    from: debian:jessie
+    # Install tox using pip and virtualenv to get a more recent version.
+    # This is a shell script.
+    script: |
+      apt-get install -y python-virtualenv
+      virtualenv /opt/tox
+      . /opt/tox/activate
+      pip install tox
+  # Box for publishing.
+  publisher:
+    # Start from the testing box above.
+    from: tester
+    # Install devpi client.
+    commands:
+      - /opt/tox/bin/pip install devpi-client
+tests:
+  # Default is a special test environment that defines defaults for all others.
+  :default:
+    # Use the box that we defined above so we can take advantage of our Tox.
+    box: tester
+    commands:
+      # Variable substitution.
+      - /opt/tox/bin/tox -e ${ENV}
+  py27:
+    define:
+      - ENV=py27
+  py35:
+    define:
+      - ENV=py35
+  linting:
+    commands:
+      - tox -elint --other-flag
+tasks:
+  publish:
+    # Only do this if all tests pass.
+    depends-on:
+      - tests/*
+    box: publisher
+    # I don't remember the exact commands, but the idea is that we publish
+    # the package to our local development index using devpi client.
+    script: |
+      . /opt/tox/bin/activate
+      devpi use whatever/dev
+      devpi login ...
+      devpi upload -y

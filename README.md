@@ -34,29 +34,37 @@ and example of `uplink.yaml` (this is not there yet).
 
 ### Python library or script
 
-1. Can produce .tgz packages, eggs or wheels
-2. No assemblies
-3. Publish to pypi (or local devpi server) using devpi client
-4. Run tests using tox, doesn't use any artifacts
+1. Build artifacts: .tgz packages, eggs or wheels, or it could be nothing,
+   since we can publish and test directly without building.
+2. No deployment section.
+3. Publish to pypi (or local devpi server) using devpi client.
+4. Run tests using tox, doesn't use any artifacts.
+
+Examples:
+- Simple python package using Tox [python-abp-1](python-abp-1.yaml)
 
 ### Browser plugin
-1. Produces plugin package(s)
-2. Maybe assembly for selenium testing or something like that
-3. Publish to one or more stores
+
+1. Build artifacts: plugin package(s).
+2. Maybe assembly for selenium testing or something like that.
+3. Publish to one or more stores.
 4. Run local unit tests using node.js and some test runner; maybe run
    functional tests with selenium using the selenium assembly.
 
 ### Web site
-1. Produces rendered static content
+
+1. Build artifacts: rendered static content.
 2. Production assembly of two boxes: (nginx + static content) + (fcgi
    multiplexer + scripts), test assembly that might be identical or maybe
 slightly different.
-3. No publishing, we only deploy this
+3. No publishing, we only deploy this.
 4. Test the website using the testing assembly and maybe something like
    selenium.
 
 ### Deployment of 3rd party software, like Discourse
-1. No build
-2. Assembly with production config
-3. No publishing
-4. Maybe test the production assembly
+
+1. No build.
+2. Assembly with production configuration, for example a database box and an
+   application box with nginx as a reverse proxy.
+3. No publishing.
+4. Maybe test the production assembly.
