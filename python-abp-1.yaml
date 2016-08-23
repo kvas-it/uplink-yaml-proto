@@ -7,6 +7,7 @@ boxes:
     # Install tox using pip and virtualenv to get a more recent version.
     # This is a shell script.
     script: |
+      apt-get update -y
       apt-get install -y python-virtualenv
       virtualenv /opt/tox
       . /opt/tox/activate
