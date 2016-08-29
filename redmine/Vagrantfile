@@ -1,0 +1,93 @@
+require "vagrant"
+
+# https://www.vagrantup.com/docs/vagrantfile/version.html
+VAGRANT_API_VERSION = "2"
+
+# https://www.vagrantup.com/docs/vagrantfile/tips.html
+ENV["LC_ALL"] = "en_US.UTF-8"
+
+# https://www.vagrantup.com/
+Vagrant.configure(VAGRANT_API_VERSION) do |config|
+
+  # https://www.vagrantup.com/docs/multi-machine/
+  config.vm.define "app" do |config|
+
+    # https://www.vagrantup.com/docs/vagrantfile/machine_settings.html
+    config.vm.hostname = "app.local"
+    config.vm.post_up_message = "http://10.8.10.8:3000/"
+
+    # https://www.vagrantup.com/docs/boxes.html
+    config.vm.box = "debian/contrib-jessie64"
+    config.vm.box_url = "https://atlas.hashicorp.com/debian/boxes/contrib-jessie64"
+
+    # https://www.vagrantup.com/docs/networking/
+    config.vm.network "private_network", ip: "10.8.10.8"
+
+    # https://www.vagrantup.com/docs/provisioning/shell.html
+    config.vm.provision "shell", inline: <<-end
+      apt-get -y update
+      apt-get -y install debconf-utils
+      apt-get -y install --no-install-recommends redmine-pgsql
+      echo "redmine redmine/instances/default/dbconfig-install  boolean false" | debconf-set-selections
+      mkdir -p /etc/redmine/default
+      cat >/etc/redmine/default/database.yml <<END
+production:
+  adapter: postgresql
+  database: redmine
+  host: 10.8.10.9
+  port: 5432
+  username: redmine
+  password: redpass
+  encoding: utf8
+END
+      cat >/etc/systemd/system/redmine.service <<END
+[Unit]
+Description=Redmine
+
+[Service]
+User=www-data
+Environment=X_DEBIAN_SITEID=default
+WorkingDirectory=/usr/share/redmine
+ExecStart=/usr/bin/ruby bin/rails server -e production
+END
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get -y install redmine
+      mkdir -p /usr/share/redmine/tmp
+      chown www-data /usr/share/redmine/tmp
+      systemctl start redmine
+    end
+
+  end
+
+  config.vm.define "db" do |config|
+
+    config.vm.hostname = "db.local"
+    config.vm.box = "debian/contrib-jessie64"
+    config.vm.box_url = "https://atlas.hashicorp.com/debian/boxes/contrib-jessie64"
+
+    config.vm.network "private_network", ip: "10.8.10.9"
+
+    # https://www.vagrantup.com/docs/provisioning/shell.html
+    config.vm.provision "shell", inline: <<-end
+      apt-get -y update
+      apt-get -y install postgresql
+      sudo -u postgres psql <<END
+create user redmine password 'redpass';
+create database redmine;
+grant all on database redmine to redmine;
+alter system set listen_addresses='*';
+END
+    cat >>/etc/postgresql/9.4/main/pg_hba.conf <<END
+# Allow connections from Redmine application server.
+host    all             all             10.8.10.8/32            md5
+END
+      /etc/init.d/postgresql restart
+    end
+
+  end
+
+  # https://github.com/mitchellh/vagrant/issues/1673
+  config.ssh.shell = "sh -c 'BASH_ENV=/etc/profile exec bash'"
+
+end
+
