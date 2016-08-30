@@ -1,4 +1,21 @@
+# General things to ignore.
+build/
+dist/
+*.egg-info/
+*.egg
+*.py[cod]
+__pycache__/
+*.so
+*~
+
+# Due to using tox and pytest.
+.tox
+.cachev
+
+# Virtualenvs.
 /venv
 /venv2
 /venv3
+
+# Vagrant directory.
 .vagrant
