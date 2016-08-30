@@ -37,7 +37,7 @@ containers:
       debconf-set-selections
     - mkdir -p /etc/redmine/default
     - |
-      cat >/etc/redmine/default <<END
+      cat >/etc/redmine/default/database.yml <<END
       production:
         adapter: postgresql
         database: redmine
@@ -58,7 +58,8 @@ containers:
       WorkingDirectory=/usr/share/redmine
       ExecStart=/usr/bin/ruby bin/rails server -e production
       END
-    - DEBIAN_FRONTENT=noninteractive apt-get -y install redmine
+    - export DEBIAN_FRONTEND=noninteractive
+    - apt-get -y install redmine
     - mkdir -p /usr/share/redmine/tmp
     - chown www-data /usr/share/redmine/tmp
     - systemctl start redmine
