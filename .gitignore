@@ -17,5 +17,5 @@ __pycache__/
 /venv2
 /venv3
 
-# Vagrant directory.
-.vagrant
+# Uplink directory.
+.uplink
