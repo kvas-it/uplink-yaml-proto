@@ -92,7 +92,7 @@ tasks:
       - cd /usr/share/redmine
       - export RAILS_ENV=production
       - ruby bin/rake generate_secret_token
-      - ruby bin/rake db:migrate
+      - ruby bin/rake db:migrate >/dev/null
   start-db:
     - database:
       - /etc/init.d/postgresql start
