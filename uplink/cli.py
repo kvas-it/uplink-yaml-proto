@@ -35,16 +35,7 @@ def cli(ctx, **options):
 @click.pass_obj
 def status(uplink):
     """Display current status."""
-    if not uplink.containers:
-        print('No containers defined')
-        return
-
-    states = uplink.backend.get_container_states()
-    for name in sorted(uplink.containers):
-        if name in states:
-            print('{}: {}'.format(name, states[name]))
-        else:
-            print('{} -- backend failed to report state'.format(name))
+    uplink.backend.get_container_states()
 
 
 @cli.command()

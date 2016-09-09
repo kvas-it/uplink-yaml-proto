@@ -12,12 +12,6 @@ BOX_MAP = {
 }
 
 
-VagrantMessage = collections.namedtuple(
-    'VagrantMessage',
-    ['timestamp', 'target', 'type', 'data']
-)
-
-
 class VagrantBackend(object):
     """Vagrant container management backend."""
 
@@ -52,40 +46,24 @@ class VagrantBackend(object):
         return 'script.sh'
 
     def _run_vagrant(self, *args):
-        # TODO: Yield the lines instead of returning them all at once.
-        cmd = ['vagrant', '--machine-readable'] + list(args)
-        output = subprocess.check_output(cmd, cwd=self.rootdir)
-        lines = str(output, 'utf-8').split('\n')[:-1]
-        for line in lines:
-            try:
-                yield VagrantMessage(*line.split(',', 3))
-            except TypeError:
-                yield line
+        cmd = ['vagrant'] + list(args)
+        subprocess.check_call(cmd, cwd=self.rootdir)
 
     def get_container_states(self):
         """Return the states of the containers."""
-        states = {}
-        for msg in self._run_vagrant('status'):
-            if msg.type == 'state':
-                states[msg.target] = msg.data
-        return states
+        self._run_vagrant('status')
 
     def create_container(self, container_name):
         """Create one container."""
-        for msg in self._run_vagrant('up', container_name):
-            print(msg)
+        self._run_vagrant('up', container_name)
 
     def delete_all_containers(self):
         """Delete all containers."""
-        for msg in self._run_vagrant('destroy', '-f'):
-            if msg.type == 'ui':
-                print(msg.data)
+        self._run_vagrant('destroy', '-f')
 
     def delete_container(self, container_name):
         """Delete one container."""
-        for msg in self._run_vagrant('destroy', '-f', container_name):
-            if msg.type == 'ui':
-                print(msg.data)
+        self._run_vagrant('destroy', '-f', container_name)
 
     def run_task(self, task_name):
         """Run one task."""
@@ -93,11 +71,9 @@ class VagrantBackend(object):
             if isinstance(step, dict):
                 for container_name, commands in step.items():
                     script_name = self._write_shell_script(commands)
-                    result = self._run_vagrant(
+                    self._run_vagrant(
                         'ssh', container_name, '--', 'sudo', '-E', '-H',
                         '/bin/sh', '/vagrant/' + script_name
                     )
-                    for msg in result:
-                        print(msg)
             else:
                 self.run_task(step)
