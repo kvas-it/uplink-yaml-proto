@@ -78,6 +78,7 @@ tasks:
       - /etc/init.d/postgresql restart
     - application:
       - |
+        mkdir -p /etc/redmine/default
         cat >/etc/redmine/default/database.yml <<END
         production:
           adapter: postgresql
@@ -101,3 +102,10 @@ tasks:
   start:
     - start-db
     - start-app
+  test:
+    - application:
+      - echo 'Running hostname at application:'
+      - hostname
+    - database:
+      - echo 'Running hostname at database:'
+      - hostname
