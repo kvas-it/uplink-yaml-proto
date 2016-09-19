@@ -14,8 +14,6 @@ __pycache__/
 
 # Virtualenvs.
 /venv
-/venv2
-/venv3
 
 # Uplink directory.
-.uplink
+.uplink/
