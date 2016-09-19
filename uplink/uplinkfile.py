@@ -1,7 +1,9 @@
 """Uplink prototype project config (uplinkfile) handling."""
 
 import logging
+import string
 import sys
+
 import yaml
 
 
@@ -13,7 +15,18 @@ class Uplinkfile(object):
 
     def __init__(self, filename, data):
         self.filename = filename
-        self.data = data
+        self.variables = data['variables']
+        self.containers = self._expand_vars(data['containers'] or {})
+        self.tasks = self._expand_vars(data['tasks'] or {})
+
+    def _expand_vars(self, value):
+        if isinstance(value, list):
+            return [self._expand_vars(i) for i in value]
+        if isinstance(value, dict):
+            return {k: self._expand_vars(v) for k, v in value.items()}
+        if isinstance(value, str) and '$' in value:
+            return string.Template(value).substitute(self.variables)
+        return value
 
 
 def load(file):

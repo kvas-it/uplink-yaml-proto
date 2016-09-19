@@ -1,7 +1,6 @@
 """Uplink prototype command line interface."""
 
 import logging
-import sys
 
 import click
 
@@ -14,7 +13,7 @@ log = logging.getLogger(__name__)
 @click.option('--backend', '-b', default='vagrant', show_default=True,
               envvar='UPLINK_BACKEND', help='Virtualisation backend')
 @click.option('--uplinkfile', '-u', default='uplink.yaml', show_default=True,
-              type=click.File('r'), envvar='UPLINK_UPLINKFILE',
+              type=click.File('r'), envvar='UPLINKFILE',
               help='Configuration file.')
 @click.option('--uplink-dir', default='.uplink', show_default=True,
               envvar='UPLINK_DIR', help='Directory for keeping uplink state.')

@@ -31,7 +31,7 @@ class VagrantBackend(object):
             vm = {}
             vm['name'] = name
             vm['hostname'] = name + '.local'
-            vm['ip'] = container['network']['ip']
+            vm['ip'] = self.uplink.get_var(name + '_ip')
             vm['box'] = BOX_MAP[container['from']]
             vm['shell_provision'] = container['commands']
             params['vms'].append(vm)

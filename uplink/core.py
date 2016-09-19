@@ -9,6 +9,10 @@ class UplinkError(Exception):
     """Errors specific to uplink."""
 
 
+# Marker for optional arguments.
+NOT_SET = []
+
+
 class Uplink(object):
     """Uplink engine."""
 
@@ -25,11 +29,16 @@ class Uplink(object):
 
     @property
     def containers(self):
-        return self.uplinkfile.data.get('containers', {})
+        return self.uplinkfile.containers
 
     @property
     def tasks(self):
-        return self.uplinkfile.data.get('tasks', {})
+        return self.uplinkfile.tasks
+
+    def get_var(self, name, default=NOT_SET):
+        if default is NOT_SET:
+            return self.uplinkfile.variables[name]
+        return self.uplinkfile.get(name, default)
 
     def run_task(self, task_name):
         if task_name not in self.tasks:

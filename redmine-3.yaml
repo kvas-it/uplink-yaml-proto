@@ -1,0 +1,91 @@
+# This is the third prototype of Uplink configuration for Redmine. Here we're
+# trying to abstract all configuration away from the provisioning scripts and
+# tasks. 
+
+# Variables that define the configuration of these containers. They might get
+# overriden by the environment or command line options.
+variables:
+  application_ip: 10.8.10.8
+  application_port: 3000
+  database_ip: 10.8.10.9
+  database_port: 5432
+  database_name: redmine
+  database_user: redmine
+  database_pass: redpass
+
+containers:
+  application:
+    from: debian:jessie
+    commands:
+    - &prep apt-get -y update
+    - export DEBIAN_FRONTEND=noninteractive
+    - apt-get -y install debconf-utils
+    - apt-get -y install --no-install-recommends redmine-pgsql
+    - '# Skip redmine post-install: see https://askubuntu.com/questions/482928'
+    - apt-get download redmine
+    - dpkg --unpack redmine*.deb
+    - rm -f /var/lib/dpkg/info/redmine.postinst redmine*.deb
+    - apt-get install -yf
+    - '# Create redmine service for systemd.'
+    - |
+      cat >/etc/systemd/system/redmine.service <<END
+      [Unit]
+      Description=Redmine
+
+      [Service]
+      User=www-data
+      Environment=X_DEBIAN_SITEID=default
+      WorkingDirectory=/usr/share/redmine
+      ExecStart=/usr/bin/ruby bin/rails server -e production
+      END
+    # Create temporary directory for redmine instance and adjust access rights.
+    - mkdir -p /usr/share/redmine/tmp
+    - chown www-data /usr/share/redmine/tmp
+  database:
+    from: debian:jessie
+    commands:
+    - *prep
+    - apt-get -y install postgresql
+
+tasks:
+  init:
+    - database:
+      - |
+        sudo -u postgres psql <<END
+        create user $database_user password '$database_pass';
+        create database $database_name;
+        grant all on database $database_name to $database_user;
+        alter system set listen_addresses='*';
+        END
+      - |
+        cat >>/etc/postgresql/9.4/main/pg_hba.conf <<END
+        # Allow connections from Redmine application server.
+        host    all             all             $application_ip/32            md5
+        END
+      - /etc/init.d/postgresql restart
+    - application:
+      - |
+        mkdir -p /etc/redmine/default
+        cat >/etc/redmine/default/database.yml <<END
+        production:
+          adapter: postgresql
+          database: $database_name
+          host: $database_ip
+          port: $database_port
+          username: $database_user
+          password: $database_pass
+          encoding: utf8
+        END
+      - cd /usr/share/redmine
+      - export RAILS_ENV=production
+      - ruby bin/rake generate_secret_token
+      - ruby bin/rake db:migrate >/dev/null
+  start-db:
+    - database:
+      - /etc/init.d/postgresql start
+  start-app:
+    - application:
+      - systemctl start redmine
+  start:
+    - start-db
+    - start-app
